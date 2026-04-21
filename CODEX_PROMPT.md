@@ -4,31 +4,30 @@ Build a complete, production-ready Next.js 15 App Router application.
 
 PROJECT: salary-data-privacy
 HEADLINE: Check and control who sees your salary data
-WHAT: None
-WHY: None
-WHO PAYS: None
+WHAT: A dashboard that shows which companies, background check services, and data brokers have access to your salary history. Sends automated opt-out requests and monitors for new data sharing agreements.
+WHY: Salary data from Equifax and employment verification services gets sold to hundreds of companies without your knowledge, affecting loan rates, insurance premiums, and job negotiations. Most people have no idea who has this data.
+WHO PAYS: Privacy-conscious professionals who've applied for loans, changed jobs recently, or work at companies using third-party HR platforms. Especially valuable for high earners whose salary data is most commercially valuable.
 NICHE: privacy-tools
 PRICE: $$12/mo
 
 ARCHITECTURE SPEC:
-A Next.js web app that scans job sites, salary databases, and data brokers to find where your salary information appears publicly. Users can track exposure, request removals, and monitor ongoing privacy with automated alerts.
+A Next.js dashboard that integrates with data broker APIs to scan for user salary data, displays findings in a privacy-focused interface, and automates opt-out requests through form submissions and email templates. Uses Lemon Squeezy for subscription billing and stores user data/scan results in a database.
 
 PLANNED FILES:
-- app/page.tsx
 - app/dashboard/page.tsx
-- app/scan/page.tsx
-- app/api/scan/route.ts
-- app/api/webhooks/lemonsqueezy/route.ts
+- app/api/scan-data/route.ts
+- app/api/opt-out/route.ts
+- app/api/webhooks/lemon-squeezy/route.ts
+- components/DataBrokerCard.tsx
 - components/ScanResults.tsx
-- components/RemovalRequest.tsx
-- components/PricingCard.tsx
-- lib/scanners/glassdoor.ts
-- lib/scanners/payscale.ts
-- lib/scanners/levels.ts
+- components/OptOutButton.tsx
+- lib/data-brokers.ts
+- lib/lemon-squeezy.ts
 - lib/database.ts
-- lib/lemonsqueezy.ts
+- app/pricing/page.tsx
+- app/page.tsx
 
-DEPENDENCIES: next, tailwindcss, @lemonsqueezy/lemonsqueezy.js, prisma, @prisma/client, puppeteer, cheerio, nodemailer, stripe, next-auth, bcryptjs, zod
+DEPENDENCIES: next, tailwindcss, @lemonsqueezy/lemonsqueezy.js, prisma, @prisma/client, next-auth, nodemailer, puppeteer, zod, lucide-react
 
 REQUIREMENTS:
 - Next.js 15 with App Router (app/ directory)
@@ -36,17 +35,33 @@ REQUIREMENTS:
 - Tailwind CSS v4
 - shadcn/ui components (npx shadcn@latest init, then add needed components)
 - Dark theme ONLY — background #0d1117, no light mode
-- Lemon Squeezy checkout overlay for payments
+- Stripe Payment Link for payments (hosted checkout — use the URL directly as the Buy button href)
 - Landing page that converts: hero, problem, solution, pricing, FAQ
 - The actual tool/feature behind a paywall (cookie-based access after purchase)
 - Mobile responsive
 - SEO meta tags, Open Graph tags
 - /api/health endpoint that returns {"status":"ok"}
+- NO HEAVY ORMs: Do NOT use Prisma, Drizzle, TypeORM, Sequelize, or Mongoose. If the tool needs persistence, use direct SQL via `pg` (Postgres) or `better-sqlite3` (local), or just filesystem JSON. Reason: these ORMs require schema files and codegen steps that fail on Vercel when misconfigured.
+- INTERNAL FILE DISCIPLINE: Every internal import (paths starting with `@/`, `./`, or `../`) MUST refer to a file you actually create in this build. If you write `import { Card } from "@/components/ui/card"`, then `components/ui/card.tsx` MUST exist with a real `export const Card` (or `export default Card`). Before finishing, scan all internal imports and verify every target file exists. Do NOT use shadcn/ui patterns unless you create every component from scratch — easier path: write all UI inline in the page that uses it.
+- DEPENDENCY DISCIPLINE: Every package imported in any .ts, .tsx, .js, or .jsx file MUST be
+  listed in package.json dependencies (or devDependencies for build-only). Before finishing,
+  scan all source files for `import` statements and verify every external package (anything
+  not starting with `.` or `@/`) appears in package.json. Common shadcn/ui peers that MUST
+  be added if used:
+  - lucide-react, clsx, tailwind-merge, class-variance-authority
+  - react-hook-form, zod, @hookform/resolvers
+  - @radix-ui/* (for any shadcn component)
+- After running `npm run build`, if you see "Module not found: Can't resolve 'X'", add 'X'
+  to package.json dependencies and re-run npm install + npm run build until it passes.
 
 ENVIRONMENT VARIABLES (create .env.example):
-- NEXT_PUBLIC_LEMON_SQUEEZY_STORE_ID
-- NEXT_PUBLIC_LEMON_SQUEEZY_PRODUCT_ID
-- LEMON_SQUEEZY_WEBHOOK_SECRET
+- NEXT_PUBLIC_STRIPE_PAYMENT_LINK  (full URL, e.g. https://buy.stripe.com/test_XXX)
+- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY  (pk_test_... or pk_live_...)
+- STRIPE_WEBHOOK_SECRET  (set when webhook is wired)
+
+BUY BUTTON RULE: the Buy button's href MUST be `process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK`
+used as-is — do NOT construct URLs from a product ID, do NOT prepend any base URL,
+do NOT wrap it in an embed iframe. The link opens Stripe's hosted checkout directly.
 
 After creating all files:
 1. Run: npm install
@@ -56,26 +71,3 @@ After creating all files:
 
 Do NOT use placeholder text. Write real, helpful content for the landing page
 and the tool itself. The tool should actually work and provide value.
-
-
-PREVIOUS ATTEMPT FAILED WITH:
-Codex exited 1: Reading additional input from stdin...
-OpenAI Codex v0.121.0 (research preview)
---------
-workdir: /tmp/openclaw-builds/salary-data-privacy
-model: gpt-5.3-codex
-provider: openai
-approval: never
-sandbox: danger-full-access
-reasoning effort: none
-reasoning summaries: none
-session id: 019d9501-39d1-75d2-b3ad-4165a7454513
---------
-user
-# Build Task: salary-data-privacy
-
-Build a complete, production-ready Next.js 15 App Router application.
-
-PROJECT: salary-data-privacy
-HEADLINE: Check and control who 
-Please fix the above errors and regenerate.
